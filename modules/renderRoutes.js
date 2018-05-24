@@ -5,11 +5,13 @@ import Redirect from "react-router/Redirect";
 import generatePath from "react-router/generatePath";
 
 const EMPTY = {};
+const DEFAULT_ROUTE_PROP = 'route';
 const DEFAULT_RENDER_CHILD_PROP = 'renderChild';
 
 const renderRoutes = (routes, {
   extraProps = EMPTY,
   switchProps = EMPTY,
+  routeProp = DEFAULT_ROUTE_PROP,
   renderChildProp = DEFAULT_RENDER_CHILD_PROP,
   noRenderChildComponent = false,
   overrideRenderRoutes = false
@@ -33,15 +35,20 @@ const renderRoutes = (routes, {
                   {...(route.props ? route.props : EMPTY)}
                   {...props}
                   {...extraProps}
-                  route={route}
+                  {...(routeProp ? ({
+                    [routeProp]: route
+                  }) : (
+                    {}
+                  ))}
                   {...(renderChildProp ? (
-                    { [renderChildProp]: props =>
+                    {
+                      [renderChildProp]: ({ route: stripRoute, match: stripMatch, ...otherProps} = {}) =>
                         route.routes ? (
                           overrideRenderRoutes ? overrideRenderRoutes : renderRoutes).call(
                             null,
                             route.routes,
                             {
-                              extraProps: props,
+                              extraProps: otherProps,
                               switchProps,
                               renderChildProp,
                               noRenderChildComponent,
