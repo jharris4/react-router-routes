@@ -1,5 +1,11 @@
 # React Router Routes
 
+** This is a fork of [react-router-config](https://github.com/ReactTraining/react-router/tree/master/packages/react-router-config).
+
+** Replace all instances of `react-router-config` or `ReactRouterConfig` with `react-router-routes` or `ReactRouterRoutes`
+
+** Or use `react-router-config` itself if/when [this PR gets merged](https://github.com/ReactTraining/react-router/pull/6170)
+
 Static route configuration helpers for React Router.
 
 This is alpha software, it needs:
@@ -11,25 +17,25 @@ This is alpha software, it needs:
 
 Using [npm](https://www.npmjs.com/):
 
-    $ npm install --save react-router-routes
+    $ npm install --save react-router-config
 
 Then with a module bundler like [webpack](https://webpack.github.io/), use as you would anything else:
 
 ```js
 // using an ES6 transpiler, like babel
-import { matchRoutes, renderRoutes } from "react-router-routes";
+import { matchRoutes, renderRoutes } from "react-router-config";
 
 // not using an ES6 transpiler
-var matchRoutes = require("react-router-routes").matchRoutes;
+var matchRoutes = require("react-router-config").matchRoutes;
 ```
 
 The UMD build is also available on [unpkg](https://unpkg.com):
 
 ```html
-<script src="https://unpkg.com/react-router-routes/umd/react-router-routes.min.js"></script>
+<script src="https://unpkg.com/react-router-config/umd/react-router-config.min.js"></script>
 ```
 
-You can find the library on `window.ReactRouterRoutes`
+You can find the library on `window.ReactRouterConfig`
 
 ## Motivation
 
@@ -46,11 +52,13 @@ This project seeks to define a shared format for others to build patterns on top
 Routes are objects with the same properties as a `<Route>` with a couple differences:
 
 * the only render prop it accepts is `component` (no `render` or `children`)
-* introduces the `routes` key for sub routes
-* introduces the `redirect` key which can be a path that should be redirected ro when the route is matched
-* introduces the `props` and `forcedProps` keys, which can be used for convenience to inject props into the route.component
-* Consumers are free to add any additional props they'd like to a route, you can access `props.route` inside the `component`, this object is a reference to the object used to render and match.
 * accepts `key` prop to prevent remounting component when transition was made from route with the same component and same `key` prop
+* introduces the `routes` key for sub routes
+* introduces the `redirect` key which can be a path that should be redirected to (with parameter matching) when the route is matched
+* introduces the `props` and `forcedProps` keys, which can be used for convenience to pass props from the route configuration into the route component
+* Consumers are free to add any additional props they'd like to a route
+* The `route` is passed as a prop to the `component` (prop name configurable)
+* A convenience `renderChild` function is passed as a prop to the `component` (prop name configurable).
 
 ```js
 const routes = [
@@ -91,7 +99,7 @@ Returns an array of matched routes.
 * pathname - the [pathname](https://developer.mozilla.org/en-US/docs/Web/API/HTMLHyperlinkElementUtils/pathname) component of the url. This must be a decoded string representing the path.
 
 ```js
-import { matchRoutes } from "react-router-routes";
+import { matchRoutes } from "react-router-config";
 const branch = matchRoutes(routes, "/child/23");
 // using the routes shown earlier, this returns
 // [
@@ -193,12 +201,12 @@ import routes from './routes'
 
 Again, that's all pseudo-code. There are a lot of ways to do server rendering with data and pending navigation and we haven't settled on one. The point here is that `matchRoutes` gives you a chance to match statically outside of the render lifecycle. We'd like to make a demo app of this approach eventually.
 
-### `renderRoutes(routes, extraProps = {}, switchProps = {})`
+### `renderRoutes(routes, { extraProps = {}, switchProps = {}, routeProp = 'route', renderChildProp = 'renderChild' } = {})`
 
-In order to ensure that matching outside of render with `matchRoutes` and inside of render result in the same branch, you must use `renderRoutes` instead of `<Route>` inside your components. You can render a `<Route>` still, but know that it will not be accounted for in `matchRoutes` outside of render.
+In order to ensure that matching outside of render with `matchRoutes` and inside of render result in the same branch, you must use `renderRoutes` or `renderChild` instead of `<Route>` inside your components. You can render a `<Route>` still, but know that it will not be accounted for in `matchRoutes` outside of render.
 
 ```js
-import { renderRoutes } from "react-router-routes";
+import { renderRoutes } from "react-router-config";
 
 const routes = [
   {
@@ -266,4 +274,111 @@ ReactDOM.render(
   </BrowserRouter>,
   document.getElementById("root")
 );
+```
+
+Or you can update the above examples to use `props.renderChild` which eleminates the need to import the `renderRoutes` function
+
+```js
+const Root = ({ renderChild }) => (
+  <div>
+    <h1>Root</h1>
+    {/* child routes won't render without this */}
+    {renderChild()}
+  </div>
+);
+
+const Home = ({ route, renderChild }) => (
+  <div>
+    <h2>Home</h2>
+  </div>
+);
+
+const Child = ({ renderChild }) => (
+  <div>
+    <h2>Child</h2>
+    {/* child routes won't render without this */}
+    {renderChild({ someProp: "these extra props are optional" })}
+  </div>
+);
+
+const GrandChild = ({ someProp }) => (
+  <div>
+    <h3>Grand Child</h3>
+    <div>{someProp}</div>
+  </div>
+);
+```
+
+## Route Component Prop Order
+
+When route `components` are rendered they are passed a collection of props that are merged in a specific order.
+
+The are `route` keys that allow you to control this merge order.
+
+* Use `route.props` for props that should be overriden by props passed to the component
+* Use `route.forcedProps` for props that should override any props passed to the component
+
+This merge order is important if you are trying to do something like the following:
+
+```
+const routes = [
+  {
+    props: {
+      className: 'the-app-theme'
+    },
+    routes: [
+      {
+        path: '/abc',
+        routes: [
+          {
+            props: {
+              className: 'the-abc-theme' // will always be overriden by 'the-app-theme'
+            }
+          }
+        ]
+      }
+    ]
+  }
+];
+```
+
+You need to instead do the following for the className to be correctly applied:
+
+```
+const routes = [
+  {
+    props: {
+      className: 'the-app-theme'
+    },
+    routes: [
+      {
+        path: '/abc',
+        routes: [
+          {
+            forcedProps: {
+              className: 'the-abc-theme' // will override 'the-app-theme'
+            }
+          }
+        ]
+      }
+    ]
+  }
+];
+```
+
+The following illustrates the merge order of route component props:
+
+```js
+function renderRoutes(routes, { extraProps, routeProp = 'route', renderChildProp = 'renderChild' }) {
+  return routes.map(route =>
+    props => {
+      ...route.props,
+      ...props,
+      ...extraProps,
+      [routeProp] = route,
+      [renderChildProp] = props => renderRoutes(route.routes, ( { extraProps: props }),
+      ...route.forcedProps
+    }
+  )
+}
 ```
