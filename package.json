@@ -1,6 +1,6 @@
 {
   "name": "react-router-routes",
-  "version": "1.0.1",
+  "version": "1.0.2",
   "description": "Static route config matching for React Router",
   "repository": "jharris4/react-router-routes",
   "license": "MIT",
