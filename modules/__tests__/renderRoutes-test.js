@@ -266,6 +266,48 @@ function buildTests(title, RenderRoutes) {
       });
     });
 
+    describe("addParamProps", () => {
+      it("adds the param props and also strips out the route/match props", () => {
+        const node = document.createElement("div");
+
+        let username = void 0;
+        let messageId = void 0;
+        let route = void 0;
+        let match = void 0;
+
+        const Target = props => {
+          username = props.username;
+          messageId = props.messageId;
+          route = props.route;
+          match = props.match;
+          return false;
+        };
+
+        const routes = [
+          {
+            path: "/:username/messages/:messageId",
+            component: Target
+          }
+        ];
+
+        ReactDOM.render(
+          <MemoryRouter initialEntries={["/mjackson/messages/123"]}>
+            {renderRoutes(routes, {
+              addParamProps: true,
+              routeProp: false,
+              matchProp: false
+              })}
+          </MemoryRouter>,
+          node
+        );
+
+        expect(username).toBe("mjackson");
+        expect(messageId).toBe("123");
+        expect(route).toBe(void 0);
+        expect(match).toBe(void 0);
+      });
+    });
+
     describe("routes with redirect", () => {
       it("redirects for a matching path", () => {
         const node = document.createElement("div");
