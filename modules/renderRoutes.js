@@ -1,8 +1,5 @@
 import React from "react";
-import Switch from "react-router/Switch";
-import Route from "react-router/Route";
-import Redirect from "react-router/Redirect";
-import generatePath from "react-router/generatePath";
+import { Switch, Route, Redirect, generatePath } from "react-router";
 
 const EMPTY = {};
 const DEFAULT_ROUTE_PROP = 'route';
